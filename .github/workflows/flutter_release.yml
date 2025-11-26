@@ -1,44 +1,46 @@
-name: Build & Release Flutter APK
+name: Flutter Build & Release
 
 on:
   push:
     branches:
-      - lab1   # الفرع الذي تريد البناء منه
+      - lab1 # يعمل فقط عند الرفع على هذا الفرع
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      # 1. جلب الكود من المستودع
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Set up Flutter
+      # 2. إعداد بيئة الجافا (مطلوبة للأندرويد)
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      # 3. تثبيت Flutter
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          channel: 'stable'
 
-      - name: Install dependencies
+      # 4. جلب المكاتب
+      - name: Install Dependencies
         run: flutter pub get
 
+      # 5. بناء ملف APK
       - name: Build APK
         run: flutter build apk --release
 
+      # 6. إنشاء الـ Release ورفع الملف
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ github.run_number }}
-          release_name: Release v${{ github.run_number }}
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets._GITHUB_TOKEN }}
-
-      - name: Upload APK to Release
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: build/app/outputs/flutter-apk/app-release.apk
-          asset_name: app-release.apk
-          asset_content_type: application/vnd.android.package-archive
+          # يقوم بعمل تاج تلقائي برقم العملية (مثلاً v1.0.5)
+          tag_name: v1.0.${{ github.run_number }}
+          name: Release v1.0.${{ github.run_number }}
+          files: build/app/outputs/flutter-apk/app-release.apk
+          token: ${{ secrets._GITHUB_TOKEN }} # التوكن الذي قمت أنت بإنشائه
